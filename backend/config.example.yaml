@@ -1,0 +1,43 @@
+# Blip Terminal Backend Configuration
+# Copy this file to config.yaml and fill in your values.
+# DO NOT commit config.yaml to version control.
+
+server:
+  host: "0.0.0.0"
+  port: 8765
+  log_level: "info"
+
+# Discord bot token and guild (server) ID
+discord:
+  token: "YOUR_BOT_TOKEN_HERE"
+  guild_id: 123456789012345678
+
+# OpenWeatherMap API key (free tier is fine)
+# https://openweathermap.org/api
+weather:
+  api_key: "YOUR_OPENWEATHERMAP_KEY"
+  city: "New York"
+  units: "imperial"   # imperial = °F, metric = °C
+
+# OpenClaw AI endpoint (local)
+openclaw:
+  base_url: "http://localhost:8000"
+  api_key: ""           # leave blank if no auth
+
+# Network monitoring
+network:
+  # Target to ping for latency check
+  ping_host: "8.8.8.8"
+  # How often to run a full speedtest (seconds) - expensive operation
+  speedtest_interval: 300
+  # LAN subnet for device scanning (CIDR)
+  lan_subnet: "192.168.1.0/24"
+
+# Update intervals (seconds) for each collector
+intervals:
+  system:    2
+  discord:   15
+  openclaw:  3
+  weather:   300
+  network:   10
+  speedtest: 300

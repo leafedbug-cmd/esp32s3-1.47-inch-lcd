@@ -1,0 +1,25 @@
+# Git ignore for Blip Terminal
+
+# Secrets
+backend/config.yaml
+firmware/src/secrets.h
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+
+# PlatformIO build artifacts
+firmware/.pio/
+firmware/.pioenvs/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
