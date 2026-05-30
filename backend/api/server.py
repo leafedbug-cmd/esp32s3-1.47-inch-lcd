@@ -1,11 +1,11 @@
 """
 Blip Terminal Backend - FastAPI server
-Exposes /api/status as the single JSON endpoint polled by the ESP32.
+Exposes a token-protected /api/status endpoint polled by the ESP32.
 """
 
 from dataclasses import asdict
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -23,12 +23,31 @@ app.add_middleware(
 )
 
 
+def _require_status_token(
+    request: Request,
+    path_token: str | None,
+    header_token: str | None,
+    query_token: str | None,
+) -> None:
+    expected = getattr(request.app.state, "status_api_token", "")
+    supplied = path_token or header_token or query_token
+    if not expected or supplied != expected:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+
 @app.get("/api/status")
-async def get_status():
+@app.get("/api/status/{path_token}")
+async def get_status(
+    request: Request,
+    path_token: str | None = None,
+    x_api_key: str | None = Header(default=None),
+    key: str | None = Query(default=None),
+):
     """Return the full status payload consumed by the ESP32."""
+    _require_status_token(request, path_token, x_api_key, key)
     return JSONResponse(content=asdict(state))
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"ok": True}

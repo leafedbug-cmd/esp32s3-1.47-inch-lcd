@@ -3,9 +3,11 @@
 # DO NOT commit config.yaml to version control.
 
 server:
-  host: "0.0.0.0"
+  host: "127.0.0.1"
   port: 8765
   log_level: "info"
+  # Required for /api/status. Accepts the token in the path, X-API-Key header, or ?key=.
+  status_api_token: "SET_A_LONG_RANDOM_TOKEN"
 
 # Discord bot token and guild (server) ID
 discord:

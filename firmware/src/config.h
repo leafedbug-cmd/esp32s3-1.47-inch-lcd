@@ -10,35 +10,66 @@
 
 // -----------------------------------------------------------------------------
 // Backend API
-// IP of the PC running the Python backend service
+// Define overrides in secrets.h to keep host/token out of git.
 // -----------------------------------------------------------------------------
-#define API_HOST        "192.168.1.100"
-#define API_PORT        8765
-#define API_ENDPOINT    "/api/status"
-#define API_TIMEOUT_MS  5000
+#ifndef API_HOST
+#define API_HOST          "your-status-host.example.ts.net"
+#endif
+
+#ifndef STATUS_API_TOKEN
+#define STATUS_API_TOKEN  "YOUR_STATUS_API_TOKEN"
+#endif
+
+#ifndef API_PORT
+#define API_PORT          443
+#endif
+
+#ifndef API_ENDPOINT
+#define API_ENDPOINT      "/api/status/" STATUS_API_TOKEN
+#endif
+
+#ifndef API_USE_TLS
+#define API_USE_TLS       1
+#endif
+
+#ifndef API_TLS_INSECURE
+#define API_TLS_INSECURE  1
+#endif
+
+#ifndef API_ROOT_CA
+#define API_ROOT_CA       nullptr
+#endif
+
+#ifndef API_TIMEOUT_MS
+#define API_TIMEOUT_MS    5000
+#endif
 
 // -----------------------------------------------------------------------------
 // Display hardware
-// Pins are injected via build_flags in platformio.ini (-DTFT_MOSI=11 etc.)
+// Pins are injected via build_flags in platformio.ini.
+// Waveshare ESP32-S3-LCD-1.47 reference mapping:
+// https://www.waveshare.com/wiki/ESP32-S3-LCD-1.47
 // These are documented here for reference only.
 // -----------------------------------------------------------------------------
-// TFT_MOSI  = GP11  (GPIO 11)
-// TFT_SCLK  = GP10  (GPIO 10)
-// TFT_CS    = GP9   (GPIO 9)
-// TFT_DC    = GP8   (GPIO 8)
-// TFT_RST   = GP12  (GPIO 12)
-// TFT_BL    = GPIO 46 (internal, not on header)
+// TFT_MOSI  = GPIO 45
+// TFT_SCLK  = GPIO 40
+// TFT_CS    = GPIO 42
+// TFT_DC    = GPIO 41
+// TFT_RST   = GPIO 39
+// TFT_BL    = GPIO 48 (internal)
 //
-// TF Card (shared SPI bus):
-// SD_MOSI   = GP11  (shared)
-// SD_SCLK   = GP10  (shared)
-// SD_MISO   = GP13  (GPIO 13)
-// SD_CS     = GP7   (GPIO 7)  -- unused in this project
+// TF Card (SDIO):
+// SD_CMD    = GPIO 15
+// SD_SCK    = GPIO 14
+// SD_D0     = GPIO 16
+// SD_D1     = GPIO 18
+// SD_D2     = GPIO 17
+// SD_D3     = GPIO 21
 
 // -----------------------------------------------------------------------------
 // RGB LED (internal WS2812 or similar)
 // -----------------------------------------------------------------------------
-#define RGB_LED_PIN     48
+#define RGB_LED_PIN     38
 #define RGB_LED_COUNT   1
 
 // -----------------------------------------------------------------------------
@@ -83,7 +114,7 @@
 // -----------------------------------------------------------------------------
 // Display backlight
 // -----------------------------------------------------------------------------
-#define BACKLIGHT_PIN       46
+#define BACKLIGHT_PIN       48
 #define BACKLIGHT_CHANNEL   0
 #define BACKLIGHT_FREQ      5000
 #define BACKLIGHT_RESOLUTION 8

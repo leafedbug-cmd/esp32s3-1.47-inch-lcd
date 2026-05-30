@@ -76,15 +76,28 @@ async def main():
 
     cfg = load_config()
     server_cfg = cfg.get("server", {})
+    status_api_token = server_cfg.get("status_api_token", "")
+
+    if not status_api_token or status_api_token == "SET_A_LONG_RANDOM_TOKEN":
+        log.error(
+            "server.status_api_token must be set in config.yaml to a long random value."
+        )
+        sys.exit(1)
+
+    app.state.status_api_token = status_api_token
 
     log.info("Blip Terminal Backend starting...")
-    log.info(f"Serving on http://{server_cfg.get('host','0.0.0.0')}:{server_cfg.get('port',8765)}")
+    log.info(
+        f"Serving on http://{server_cfg.get('host','127.0.0.1')}:"
+        f"{server_cfg.get('port',8765)}"
+    )
+    log.info("Status endpoint requires token via path, X-API-Key header, or ?key=")
 
     # Run collectors concurrently with the web server
     server = uvicorn.Server(
         uvicorn.Config(
             app=app,
-            host=server_cfg.get("host", "0.0.0.0"),
+            host=server_cfg.get("host", "127.0.0.1"),
             port=server_cfg.get("port", 8765),
             log_level=server_cfg.get("log_level", "info"),
         )

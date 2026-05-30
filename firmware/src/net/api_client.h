@@ -4,9 +4,12 @@
 // Polls backend JSON endpoint, parses into DataStore
 // =============================================================================
 
+#include "../config.h"
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include "../config.h"
+#if API_USE_TLS
+#include <WiFiClientSecure.h>
+#endif
 #include "../data/data_store.h"
 
 class ApiClient {
@@ -15,14 +18,35 @@ public:
     bool fetch() {
         if (WiFi.status() != WL_CONNECTED) return false;
 
-        char url[80];
-        snprintf(url, sizeof(url), "http://%s:%d%s",
-                 API_HOST, API_PORT, API_ENDPOINT);
+        String url = String(API_USE_TLS ? "https://" : "http://") +
+                     API_HOST + ":" + String(API_PORT) + API_ENDPOINT;
 
         HTTPClient http;
-        http.begin(url);
         http.setTimeout(API_TIMEOUT_MS);
         http.addHeader("Accept", "application/json");
+
+#if API_USE_TLS
+        WiFiClientSecure secure_client;
+        if (API_TLS_INSECURE) {
+            secure_client.setInsecure();
+        } else {
+            if (API_ROOT_CA == nullptr) {
+                g_data.api_ok = false;
+                return false;
+            }
+            secure_client.setCACert(API_ROOT_CA);
+        }
+
+        if (!http.begin(secure_client, url)) {
+            g_data.api_ok = false;
+            return false;
+        }
+#else
+        if (!http.begin(url)) {
+            g_data.api_ok = false;
+            return false;
+        }
+#endif
 
         int code = http.GET();
         if (code != 200) {

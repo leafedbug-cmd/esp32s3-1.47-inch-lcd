@@ -18,15 +18,33 @@ A cyberpunk dashboard for the **Waveshare ESP32-S3-LCD-1.47** that displays live
 
 | Function | GPIO | Header |
 |----------|------|--------|
-| LCD MOSI | 11 | GP11 |
-| LCD SCLK | 10 | GP10 |
-| LCD CS | 9 | GP9 |
-| LCD DC | 8 | GP8 |
-| LCD RST | 12 | GP12 |
-| LCD BL (backlight) | 46 | internal |
-| SD MISO | 13 | GP13 |
-| RGB LED | 48 | internal |
-| Free GPIOs | 1–7 | GP1–GP7 |
+| LCD MOSI | 45 | internal |
+| LCD SCLK | 40 | internal |
+| LCD CS | 42 | internal |
+| LCD DC | 41 | internal |
+| LCD RST | 39 | internal |
+| LCD BL (backlight) | 48 | internal |
+| RGB LED data | 38 | internal |
+| SD CMD | 15 | internal |
+| SD CLK | 14 | internal |
+| SD D0 / D1 / D2 / D3 | 16 / 18 / 17 / 21 | internal |
+
+### Board Spec Sheet (Waveshare ESP32-S3-LCD-1.47)
+
+| Item | Value |
+|------|-------|
+| MCU | ESP32-S3R8, Xtensa LX7 dual-core, up to 240MHz |
+| Wireless | 2.4GHz Wi-Fi (802.11 b/g/n), Bluetooth 5 (BLE) |
+| On-chip memory | 512KB SRAM, 384KB ROM |
+| Onboard memory | 16MB Flash, 8MB PSRAM |
+| Display | 1.47" TFT, 172×320, 262K colors |
+| Display controller | ST7789 |
+| USB | USB Type-A |
+| Storage expansion | TF (microSD) slot |
+| Power regulation | ME6217C33M5G LDO (up to 800mA) |
+| Onboard controls | BOOT button, RESET button |
+| Onboard indicator | RGB LED |
+| Official references | Waveshare product page + wiki |
 
 ---
 
@@ -61,7 +79,7 @@ esp32s3-blip-terminal/
     ├── requirements.txt
     ├── config.example.yaml
     ├── api/
-    │   ├── server.py       FastAPI — GET /api/status
+    │   ├── server.py       FastAPI — tokenized GET /api/status/{token}
     │   └── state.py        AppState dataclass
     └── collectors/
         ├── system.py       psutil CPU/RAM/GPU/disk/network
@@ -83,21 +101,25 @@ pip install -r requirements.txt
 
 # Copy and edit the config
 cp config.example.yaml config.yaml
-# Edit config.yaml: set your WiFi SSID is not needed here,
-# but set API_HOST in firmware/src/config.h to your PC's IP.
-# Fill in Discord bot token, OpenWeatherMap key, etc.
+# Edit config.yaml:
+# - set server.status_api_token to a long random value
+# - keep server.host on 127.0.0.1 if you are fronting it with a tunnel/proxy
+# - fill in Discord bot token, OpenWeatherMap key, etc.
 
 python main.py
 ```
 
-The API will be available at `http://<YOUR_PC_IP>:8765/api/status`.
+The backend listens on `http://127.0.0.1:8765` by default. `GET /api/status`
+returns `404` unless the correct token is supplied as a path segment, `X-API-Key`
+header, or `?key=` query param. `GET /health` remains open for liveness checks.
 
 ### 2 — Firmware (ESP32)
 
 1. Open `firmware/` in VS Code with PlatformIO.
 2. Edit `src/config.h`:
-   - Set `WIFI_SSID` and `WIFI_PASSWORD`
-   - Set `API_HOST` to your PC's local IP address
+    - Set `WIFI_SSID` and `WIFI_PASSWORD`
+   - Set `API_HOST` to your public tunnel/proxy hostname
+   - Set `STATUS_API_TOKEN` to the backend token
 3. Build and upload:
    ```
    pio run --target upload
@@ -129,8 +151,11 @@ Screens auto-rotate every **6 seconds** by default (`AUTO_ROTATE_INTERVAL` in `c
 |----------|---------|-------------|
 | `WIFI_SSID` | `YOUR_SSID` | Your WiFi network name |
 | `WIFI_PASSWORD` | `YOUR_PASSWORD` | Your WiFi password |
-| `API_HOST` | `192.168.1.100` | PC running the backend |
-| `API_PORT` | `8765` | Backend port |
+| `API_HOST` | `your-status-host.example.ts.net` | Public hostname that forwards to the backend |
+| `STATUS_API_TOKEN` | `YOUR_STATUS_API_TOKEN` | Secret required by `/api/status` |
+| `API_PORT` | `443` | Public HTTPS port |
+| `API_USE_TLS` | `1` | Use HTTPS for the ESP32 status fetch |
+| `API_TLS_INSECURE` | `1` | Skip CA validation unless you provide `API_ROOT_CA` |
 | `AUTO_ROTATE_INTERVAL` | `6000` | ms between screen switches |
 | `FETCH_INTERVAL` | `5000` | ms between API polls |
 | `BACKLIGHT_DEFAULT` | `200` | Brightness 0–255 |
@@ -140,6 +165,11 @@ Screens auto-rotate every **6 seconds** by default (`AUTO_ROTATE_INTERVAL` in `c
 See `config.example.yaml` for all options. Key items:
 
 ```yaml
+server:
+  host: "127.0.0.1"
+  port: 8765
+  status_api_token: "your-long-random-token"
+
 discord:
   token: "your-bot-token"
   guild_id: 123456789
